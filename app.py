@@ -432,7 +432,7 @@ class SecureTodoApp:
       tasks[idx], tasks[new_idx] = tasks[new_idx], tasks[idx]
       self.refresh_task_ui(page_name)
 
-  def on_check_toggle(self, item, page_name, var):
+  def on_check_drag(self, item, page_name, var):
     item["checked"] = var.get()
     self.refresh_task_ui(page_name)
 
@@ -484,37 +484,36 @@ class SecureTodoApp:
 
     self.mini_window = ctk.CTkToplevel(self.root)
     self.mini_window.overrideredirect(True)
-    self.mini_window.geometry("180x45+100+100")
+    self.mini_window.geometry("200x45+100+100")
     self.mini_window.configure(fg_color="#1E1E1E")
 
-    # Track drag distance to differentiate between dragging and clicking
-    self.drag_start_x = 0
-    self.drag_start_y = 0
-    self.is_dragging = False
-
+    # Drag handle logic (dragging works ONLY when holding the ⠿ icon)
     def start_move(event):
-      self.drag_start_x = event.x_root
-      self.drag_start_y = event.y_root
-      self.is_dragging = False
-      self.mini_window.x_offset = event.x_root - self.mini_window.winfo_x()
-      self.mini_window.y_offset = event.y_root - self.mini_window.winfo_y()
+      self.mini_window.x_offset = (
+          event.x_root - self.mini_window.winfo_x()
+      )
+      self.mini_window.y_offset = (
+          event.y_root - self.mini_window.winfo_y()
+      )
 
     def do_move(event):
-      # If mouse moves more than 3 pixels, treat it as a drag action
-      if (
-          abs(event.x_root - self.drag_start_x) > 3
-          or abs(event.y_root - self.drag_start_y) > 3
-      ):
-        self.is_dragging = True
       x = event.x_root - self.mini_window.x_offset
       y = event.y_root - self.mini_window.y_offset
       self.mini_window.geometry(f"+{x}+{y}")
 
-    def on_click(event):
-      # Open app only if it was a clean click (not a drag)
-      if not self.is_dragging:
-        self.restore_main_window()
+    # Drag handle icon on the left
+    grip_lbl = ctk.CTkLabel(
+        self.mini_window,
+        text="⠿",
+        font=("Arial", 16),
+        text_color="#888888",
+        cursor="fleur",
+    )
+    grip_lbl.pack(side=ctk.LEFT, padx=(10, 5))
+    grip_lbl.bind("<Button-1>", start_move)
+    grip_lbl.bind("<B1-Motion>", do_move)
 
+    # Open button on the right (Clicking this opens the app)
     btn = ctk.CTkButton(
         self.mini_window,
         text="🖤 Open To-Do Notes",
@@ -525,12 +524,7 @@ class SecureTodoApp:
         font=("Arial", 11, "bold"),
         corner_radius=6,
     )
-    btn.pack(fill=ctk.BOTH, expand=True, padx=4, pady=4)
-
-    # Bind smooth drag and click separation
-    btn.bind("<Button-1>", start_move)
-    btn.bind("<B1-Motion>", do_move)
-    btn.bind("<ButtonRelease-1>", on_click)
+    btn.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True, padx=(0, 6), pady=6)
 
   def restore_main_window(self, event=None):
     if self.mini_window:
