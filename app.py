@@ -45,7 +45,7 @@ class SecureTodoApp:
   def __init__(self, root):
     self.root = root
     self.root.title("Secure Keep-Style Checklist To-Do (Dark)")
-    self.root.geometry("900x650")
+    self.root.geometry("920x650")
     self.root.configure(fg_color="#121212")
 
     self.current_user_id = None
@@ -359,7 +359,6 @@ class SecureTodoApp:
       widget.destroy()
 
     tasks = self.card_data[page_name]["tasks"]
-    # Automatically sort unchecked tasks on top, checked tasks at the bottom
     tasks.sort(key=lambda x: x["checked"])
 
     for idx, item in enumerate(tasks):
@@ -385,7 +384,6 @@ class SecureTodoApp:
       )
       chk.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=6, pady=4)
 
-      # Delete button
       del_btn = ctk.CTkButton(
           row,
           text="✕",
@@ -399,7 +397,6 @@ class SecureTodoApp:
       )
       del_btn.pack(side=ctk.RIGHT, padx=2)
 
-      # Move Down button (▼)
       if idx < len(tasks) - 1:
         down_btn = ctk.CTkButton(
             row,
@@ -414,7 +411,6 @@ class SecureTodoApp:
         )
         down_btn.pack(side=ctk.RIGHT, padx=1)
 
-      # Move Up button (▲)
       if idx > 0:
         up_btn = ctk.CTkButton(
             row,
@@ -438,7 +434,6 @@ class SecureTodoApp:
 
   def on_check_toggle(self, item, page_name, var):
     item["checked"] = var.get()
-    # Refreshes UI and instantly pushes checked items to the bottom
     self.refresh_task_ui(page_name)
 
   def delete_task(self, item, page_name):
@@ -492,16 +487,19 @@ class SecureTodoApp:
     self.mini_window.geometry("180x45+100+100")
     self.mini_window.configure(fg_color="#1E1E1E")
 
+    # FIXED DRAG LOGIC USING GLOBAL ROOT COORDINATES
     def start_move(event):
-      self.mini_window.x = event.x
-      self.mini_window.y = event.y
+      self.mini_window.x_offset = (
+          event.x_root - self.mini_window.winfo_x()
+      )
+      self.mini_window.y_offset = (
+          event.y_root - self.mini_window.winfo_y()
+      )
 
     def do_move(event):
-      deltax = event.x - self.mini_window.x
-      deltay = event.y - self.mini_window.y
-      new_x = self.mini_window.winfo_x() + deltax
-      new_y = self.mini_window.winfo_y() + deltay
-      self.mini_window.geometry(f"+{new_x}+{new_y}")
+      x = event.x_root - self.mini_window.x_offset
+      y = event.y_root - self.mini_window.y_offset
+      self.mini_window.geometry(f"+{x}+{y}")
 
     btn = ctk.CTkButton(
         self.mini_window,
