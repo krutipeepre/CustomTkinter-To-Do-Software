@@ -52,6 +52,10 @@ class SecureTodoApp:
     self.current_username = None
     self.mini_window = None
 
+    # Shared position coordinates for both widget and main window
+    self.widget_x = 100
+    self.widget_y = 100
+
     self.show_login_screen()
 
   def clear_window(self):
@@ -228,7 +232,8 @@ class SecureTodoApp:
 
   def show_todo_dashboard(self):
     self.clear_window()
-    self.root.geometry("920x650")
+    # Set main window position to match widget's last known location
+    self.root.geometry(f"920x650+{self.widget_x}+{self.widget_y}")
 
     header_frame = ctk.CTkFrame(
         self.root, fg_color="#1A1A1A", corner_radius=0, height=50
@@ -432,7 +437,7 @@ class SecureTodoApp:
       tasks[idx], tasks[new_idx] = tasks[new_idx], tasks[idx]
       self.refresh_task_ui(page_name)
 
-  def on_check_drag(self, item, page_name, var):
+  def on_check_toggle(self, item, page_name, var):
     item["checked"] = var.get()
     self.refresh_task_ui(page_name)
 
@@ -475,19 +480,30 @@ class SecureTodoApp:
     conn.commit()
     conn.close()
 
+    # Capture main window's current position before hiding it
+    try:
+      geom = self.root.geometry()
+      parts = geom.split("+")
+      if len(parts) >= 3:
+        self.widget_x = int(parts[1])
+        self.widget_y = int(parts[2])
+    except:
+      pass
+
     self.root.withdraw()
     self.show_floating_widget()
 
   def show_floating_widget(self):
     if self.mini_window:
+      self.widget_x = self.mini_window.winfo_x()
+      self.widget_y = self.mini_window.winfo_y()
       self.mini_window.destroy()
 
     self.mini_window = ctk.CTkToplevel(self.root)
     self.mini_window.overrideredirect(True)
-    self.mini_window.geometry("200x45+100+100")
+    self.mini_window.geometry(f"200x45+{self.widget_x}+{self.widget_y}")
     self.mini_window.configure(fg_color="#1E1E1E")
 
-    # Drag handle logic (dragging works ONLY when holding the ⠿ icon)
     def start_move(event):
       self.mini_window.x_offset = (
           event.x_root - self.mini_window.winfo_x()
@@ -500,8 +516,9 @@ class SecureTodoApp:
       x = event.x_root - self.mini_window.x_offset
       y = event.y_root - self.mini_window.y_offset
       self.mini_window.geometry(f"+{x}+{y}")
+      self.widget_x = x
+      self.widget_y = y
 
-    # Drag handle icon on the left
     grip_lbl = ctk.CTkLabel(
         self.mini_window,
         text="⠿",
@@ -513,7 +530,6 @@ class SecureTodoApp:
     grip_lbl.bind("<Button-1>", start_move)
     grip_lbl.bind("<B1-Motion>", do_move)
 
-    # Open button on the right (Clicking this opens the app)
     btn = ctk.CTkButton(
         self.mini_window,
         text="🖤 Open To-Do Notes",
@@ -528,8 +544,13 @@ class SecureTodoApp:
 
   def restore_main_window(self, event=None):
     if self.mini_window:
+      self.widget_x = self.mini_window.winfo_x()
+      self.widget_y = self.mini_window.winfo_y()
       self.mini_window.destroy()
       self.mini_window = None
+    
+    # Restore main window at the exact same position where widget was
+    self.root.geometry(f"920x650+{self.widget_x}+{self.widget_y}")
     self.root.deiconify()
 
   def load_all_todos(self):
