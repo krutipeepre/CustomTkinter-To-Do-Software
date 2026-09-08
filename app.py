@@ -13,11 +13,9 @@ ctk.set_default_color_theme("green")
 DB_FILE = "secure_todo.db"
 
 
-# Database Setup
 def init_db():
   conn = sqlite3.connect(DB_FILE)
   cursor = conn.cursor()
-  # Users table
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,11 +23,12 @@ def init_db():
             password BLOB NOT NULL
         )
     """)
-  # Todos table linked with user_id
+  # Updated table to support multiple pages/tabs per user
   cursor.execute("""
-        CREATE TABLE IF NOT EXISTS todos (
+        CREATE TABLE IF NOT EXISTS page_todos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
+            page_name TEXT,
             task TEXT,
             date TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id)
@@ -46,9 +45,9 @@ class SecureTodoApp:
 
   def __init__(self, root):
     self.root = root
-    self.root.title("Secure Sticky To-Do Software")
-    self.root.geometry("400x500")
-    self.root.configure(fg_color="#F4F1EA")  # Neutral aesthetic background
+    self.root.title("Secure Multi-Page Sticky To-Do")
+    self.root.geometry("550x650")
+    self.root.configure(fg_color="#F4F1EA")
 
     self.current_user_id = None
     self.current_username = None
@@ -59,7 +58,6 @@ class SecureTodoApp:
     for widget in self.root.winfo_children():
       widget.destroy()
 
-  # ================= LOGIN / REGISTER SCREENS =================
   def show_login_screen(self):
     self.clear_window()
 
@@ -202,8 +200,6 @@ class SecureTodoApp:
 
   def login_user(self):
     username = self.user_entry.get().strip()
-    password = self.user_entry.get().encode("utf-8")
-    # Using specific entry widget for password
     password_val = self.pass_entry.get().encode("utf-8")
 
     conn = sqlite3.connect(DB_FILE)
@@ -221,10 +217,9 @@ class SecureTodoApp:
     else:
       messagebox.showerror("Error", "Invalid Username or Password!")
 
-  # ================= SECURE TO-DO DASHBOARD =================
   def show_todo_dashboard(self):
     self.clear_window()
-    self.root.geometry("450x600")
+    self.root.geometry("600x650")
 
     # Header section
     header_frame = ctk.CTkFrame(
@@ -251,82 +246,110 @@ class SecureTodoApp:
     )
     logout_btn.pack(side=ctk.RIGHT, padx=15)
 
-    # Main Sticky Note Container
-    note_frame = ctk.CTkFrame(
-        self.root, fg_color="#F4F1EA", corner_radius=10, border_width=1
+    # Multi-page Tabview container
+    self.tab_view = ctk.CTkTabview(
+        self.root,
+        fg_color="#F4F1EA",
+        segmented_button_fg_color="#E8E4D9",
+        segmented_button_selected_color="#3D3A36",
+        segmented_button_selected_color_text="#FFFFFF",
+        segmented_button_unselected_color="#E8E4D9",
+        segmented_button_unselected_color_text="#2C2C2C",
     )
-    note_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
+    self.tab_view.pack(fill=ctk.BOTH, expand=True, padx=15, pady=15)
 
-    lbl = ctk.CTkLabel(
-        note_frame,
-        text="Today's Tasks (Auto-clears at midnight)",
-        font=("Arial", 12, "italic"),
-        text_color="#57534E",
-    )
-    lbl.pack(anchor="w", padx=15, pady=(15, 5))
+    # Default Pages
+    self.default_pages = ["Daily Tasks", "Work Notes", "Personal / Ideas"]
+    self.textboxes = {}
 
-    # Text area for notes
-    self.todo_text = ctk.CTkTextbox(
-        note_frame,
-        fg_color="#FFFDF9",
-        text_color="#2C2C2C",
-        font=("Arial", 12),
-        corner_radius=8,
+    for page in self.default_pages:
+      self.tab_view.add(page)
+      tb = ctk.CTkTextbox(
+          self.tab_view.tab(page),
+          fg_color="#FFFDF9",
+          text_color="#2C2C2C",
+          font=("Arial", 12),
+          corner_radius=8,
+      )
+      tb.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+      self.textboxes[page] = tb
+
+    # Load data for all pages
+    self.load_all_todos()
+
+    # Bottom Action Frame
+    bottom_frame = ctk.CTkFrame(
+        self.root, fg_color="transparent", height=50
     )
-    self.todo_text.pack(fill=ctk.BOTH, expand=True, padx=15, pady=5)
+    bottom_frame.pack(fill=ctk.X, padx=15, pady=(0, 15))
 
     save_btn = ctk.CTkButton(
-        note_frame,
-        text="Save Notes",
-        command=self.save_todos,
+        bottom_frame,
+        text="Save All Pages",
+        command=self.save_all_todos,
         fg_color="#3D3A36",
         hover_color="#57534E",
-        height=35,
+        height=40,
     )
-    save_btn.pack(fill=ctk.X, padx=15, pady=15)
+    save_btn.pack(fill=ctk.X, expand=True)
 
-    self.load_todos()
-
-  def save_todos(self):
+  def save_all_todos(self):
     today = str(datetime.date.today())
-    content = self.todo_text.get("1.0", "end-1c")
-
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    # Check if entry for today exists for this user
-    cursor.execute(
-        "SELECT id FROM todos WHERE user_id = ? AND date = ?",
-        (self.current_user_id, today),
-    )
-    row = cursor.fetchone()
 
-    if row:
+    for page_name, textbox in self.textboxes.items():
+      content = textbox.get("1.0", "end-1c")
       cursor.execute(
-          "UPDATE todos SET task = ? WHERE id = ?", (content, row[0])
-      )
-    else:
+          "SELECT id FROM users WHERE id = ?", (self.current_user_id,)
+      )  # sanity check
+
       cursor.execute(
-          "INSERT INTO todos (user_id, task, date) VALUES (?, ?, ?)",
-          (self.current_user_id, content, today),
+          "SELECT id FROM page_todos WHERE user_id = ? AND page_name = ? AND"
+          " date = ?",
+          (self.current_user_id, page_name, today),
       )
+      row = cursor.fetchone()
+
+      if row:
+        cursor.execute(
+            "UPDATE page_todos SET task = ? WHERE id = ?", (content, row[0])
+        )
+      else:
+        cursor.execute(
+            "INSERT INTO page_todos (user_id, page_name, task, date) VALUES"
+            " (?, ?, ?, ?)",
+            (self.current_user_id, page_name, content, today),
+        )
 
     conn.commit()
     conn.close()
-    messagebox.showinfo("Saved", "Your notes are securely saved!")
+    messagebox.showinfo("Saved", "All sticky pages saved securely!")
 
-  def load_todos(self):
+  def load_all_todos(self):
     today = str(datetime.date.today())
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
+
+    for page_name, textbox in self.textboxes.items():
+      cursor.execute(
+          "SELECT task FROM page_todos WHERE user_id = ? AND page_name = ? AND"
+          " date = ?",
+          (self.current_user_id, page_name, today),
+      )
+    row = cursor.fetchone()
+    # Fixed loading logic for all tabs properly
     cursor.execute(
-        "SELECT task FROM todos WHERE user_id = ? AND date = ?",
+        "SELECT page_name, task FROM page_todos WHERE user_id = ? AND date = ?",
         (self.current_user_id, today),
     )
-    row = cursor.fetchone()
+    rows = cursor.fetchall()
     conn.close()
 
-    if row:
-      self.todo_text.insert("1.0", row[0])
+    for page_name, task in rows:
+      if page_name in self.textboxes:
+        self.textboxes[page_name].delete("1.0", "end")
+        self.textboxes[page_name].insert("1.0", task)
 
 
 if __name__ == "__main__":
