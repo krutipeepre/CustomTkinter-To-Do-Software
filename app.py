@@ -45,8 +45,8 @@ class SecureTodoApp:
   def __init__(self, root):
     self.root = root
     self.root.title("Secure Keep-Style Checklist To-Do (Dark)")
-    self.root.geometry("880x650")
-    self.root.configure(fg_color="#121212")  # Deep Black Background
+    self.root.geometry("900x650")
+    self.root.configure(fg_color="#121212")
 
     self.current_user_id = None
     self.current_username = None
@@ -228,9 +228,8 @@ class SecureTodoApp:
 
   def show_todo_dashboard(self):
     self.clear_window()
-    self.root.geometry("880x650")
+    self.root.geometry("920x650")
 
-    # Header section (Dark Grey)
     header_frame = ctk.CTkFrame(
         self.root, fg_color="#1A1A1A", corner_radius=0, height=50
     )
@@ -360,15 +359,16 @@ class SecureTodoApp:
       widget.destroy()
 
     tasks = self.card_data[page_name]["tasks"]
+    # Automatically sort unchecked tasks on top, checked tasks at the bottom
     tasks.sort(key=lambda x: x["checked"])
 
-    for item in tasks:
-      row = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-      row.pack(fill=ctk.X, pady=3)
+    for idx, item in enumerate(tasks):
+      row = ctk.CTkFrame(
+          scroll_frame, fg_color="#1E1E1E", corner_radius=6
+      )
+      row.pack(fill=ctk.X, pady=3, padx=2)
 
       var = ctk.BooleanVar(value=item["checked"])
-
-      # Dimmed grey text for checked items
       text_color = "#666666" if item["checked"] else "#E0E0E0"
 
       chk = ctk.CTkCheckBox(
@@ -383,8 +383,9 @@ class SecureTodoApp:
               it, p, v
           ),
       )
-      chk.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=2)
+      chk.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=6, pady=4)
 
+      # Delete button
       del_btn = ctk.CTkButton(
           row,
           text="✕",
@@ -393,13 +394,51 @@ class SecureTodoApp:
           fg_color="transparent",
           text_color="#666666",
           hover_color="#2A2A2A",
-          font=("Arial", 11, "bold"),
+          font=("Arial", 10, "bold"),
           command=lambda it=item, p=page_name: self.delete_task(it, p),
       )
       del_btn.pack(side=ctk.RIGHT, padx=2)
 
+      # Move Down button (▼)
+      if idx < len(tasks) - 1:
+        down_btn = ctk.CTkButton(
+            row,
+            text="▼",
+            width=24,
+            height=24,
+            fg_color="transparent",
+            text_color="#888888",
+            hover_color="#2A2A2A",
+            font=("Arial", 10),
+            command=lambda i=idx, p=page_name: self.move_task(p, i, 1),
+        )
+        down_btn.pack(side=ctk.RIGHT, padx=1)
+
+      # Move Up button (▲)
+      if idx > 0:
+        up_btn = ctk.CTkButton(
+            row,
+            text="▲",
+            width=24,
+            height=24,
+            fg_color="transparent",
+            text_color="#888888",
+            hover_color="#2A2A2A",
+            font=("Arial", 10),
+            command=lambda i=idx, p=page_name: self.move_task(p, i, -1),
+        )
+        up_btn.pack(side=ctk.RIGHT, padx=1)
+
+  def move_task(self, page_name, idx, direction):
+    tasks = self.card_data[page_name]["tasks"]
+    new_idx = idx + direction
+    if 0 <= new_idx < len(tasks):
+      tasks[idx], tasks[new_idx] = tasks[new_idx], tasks[idx]
+      self.refresh_task_ui(page_name)
+
   def on_check_toggle(self, item, page_name, var):
     item["checked"] = var.get()
+    # Refreshes UI and instantly pushes checked items to the bottom
     self.refresh_task_ui(page_name)
 
   def delete_task(self, item, page_name):
@@ -451,7 +490,6 @@ class SecureTodoApp:
     self.mini_window = ctk.CTkToplevel(self.root)
     self.mini_window.overrideredirect(True)
     self.mini_window.geometry("180x45+100+100")
-    # REMOVEDattributes("-topmost", True) -> Ab ye doosri apps ke upar hover nahi karega, normal desktop window ki tarah rahega!
     self.mini_window.configure(fg_color="#1E1E1E")
 
     def start_move(event):
