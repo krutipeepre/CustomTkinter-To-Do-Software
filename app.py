@@ -6,9 +6,9 @@ from tkinter import messagebox
 import bcrypt
 import customtkinter as ctk
 
-# Setup Theme
-ctk.set_appearance_mode("Light")
-ctk.set_default_color_theme("green")
+# Setup Dark Theme
+ctk.set_appearance_mode("Dark")
+ctk.set_default_color_theme("dark-blue")
 
 DB_FILE = "secure_todo.db"
 
@@ -44,9 +44,9 @@ class SecureTodoApp:
 
   def __init__(self, root):
     self.root = root
-    self.root.title("Secure Keep-Style Checklist To-Do")
-    self.root.geometry("850x640")
-    self.root.configure(fg_color="#F4F1EA")
+    self.root.title("Secure Keep-Style Checklist To-Do (Dark)")
+    self.root.geometry("880x650")
+    self.root.configure(fg_color="#121212")  # Deep Black Background
 
     self.current_user_id = None
     self.current_username = None
@@ -66,9 +66,9 @@ class SecureTodoApp:
 
     title = ctk.CTkLabel(
         self.root,
-        text="Welcome Back ☕",
+        text="Welcome Back 🖤",
         font=("Arial", 22, "bold"),
-        text_color="#2C2C2C",
+        text_color="#E0E0E0",
     )
     title.pack(pady=40)
 
@@ -77,9 +77,10 @@ class SecureTodoApp:
         placeholder_text="Username",
         width=250,
         height=40,
-        fg_color="#E8E4D9",
-        text_color="#2C2C2C",
-        border_width=0,
+        fg_color="#1E1E1E",
+        text_color="#E0E0E0",
+        border_width=1,
+        border_color="#333333",
     )
     self.user_entry.pack(pady=10)
 
@@ -89,9 +90,10 @@ class SecureTodoApp:
         show="*",
         width=250,
         height=40,
-        fg_color="#E8E4D9",
-        text_color="#2C2C2C",
-        border_width=0,
+        fg_color="#1E1E1E",
+        text_color="#E0E0E0",
+        border_width=1,
+        border_color="#333333",
     )
     self.pass_entry.pack(pady=10)
 
@@ -99,8 +101,9 @@ class SecureTodoApp:
         self.root,
         text="Login",
         command=self.login_user,
-        fg_color="#3D3A36",
-        hover_color="#57534E",
+        fg_color="#2A2A2A",
+        hover_color="#3A3A3A",
+        text_color="#E0E0E0",
         width=250,
         height=40,
     )
@@ -111,8 +114,8 @@ class SecureTodoApp:
         text="Create New Account",
         command=self.show_register_screen,
         fg_color="transparent",
-        text_color="#57534E",
-        hover_color="#E8E4D9",
+        text_color="#888888",
+        hover_color="#1E1E1E",
         width=250,
         height=30,
     )
@@ -125,7 +128,7 @@ class SecureTodoApp:
         self.root,
         text="Create Account 🔒",
         font=("Arial", 22, "bold"),
-        text_color="#2C2C2C",
+        text_color="#E0E0E0",
     )
     title.pack(pady=40)
 
@@ -134,9 +137,10 @@ class SecureTodoApp:
         placeholder_text="Choose Username",
         width=250,
         height=40,
-        fg_color="#E8E4D9",
-        text_color="#2C2C2C",
-        border_width=0,
+        fg_color="#1E1E1E",
+        text_color="#E0E0E0",
+        border_width=1,
+        border_color="#333333",
     )
     self.reg_user_entry.pack(pady=10)
 
@@ -146,9 +150,10 @@ class SecureTodoApp:
         show="*",
         width=250,
         height=40,
-        fg_color="#E8E4D9",
-        text_color="#2C2C2C",
-        border_width=0,
+        fg_color="#1E1E1E",
+        text_color="#E0E0E0",
+        border_width=1,
+        border_color="#333333",
     )
     self.reg_pass_entry.pack(pady=10)
 
@@ -156,8 +161,9 @@ class SecureTodoApp:
         self.root,
         text="Register",
         command=self.register_user,
-        fg_color="#3D3A36",
-        hover_color="#57534E",
+        fg_color="#2A2A2A",
+        hover_color="#3A3A3A",
+        text_color="#E0E0E0",
         width=250,
         height=40,
     )
@@ -168,12 +174,38 @@ class SecureTodoApp:
         text="Back to Login",
         command=self.show_login_screen,
         fg_color="transparent",
-        text_color="#57534E",
-        hover_color="#E8E4D9",
+        text_color="#888888",
+        hover_color="#1E1E1E",
         width=250,
         height=30,
     )
     back_btn.pack(pady=5)
+
+  def register_user(self):
+    username = self.reg_user_entry.get().strip()
+    password = self.reg_pass_entry.get().encode("utf-8")
+
+    if not username or not password:
+      messagebox.showerror("Error", "All fields are required!")
+      return
+
+    hashed_password = bcrypt.hashpw(password, bcrypt.gensalt())
+
+    try:
+      conn = sqlite3.connect(DB_FILE)
+      cursor = conn.cursor()
+      cursor.execute(
+          "INSERT INTO users (username, password) VALUES (?, ?)",
+          (username, hashed_password),
+      )
+      conn.commit()
+      conn.close()
+      messagebox.showinfo(
+          "Success", "Account created successfully! Please login."
+      )
+      self.show_login_screen()
+    except sqlite3.IntegrityError:
+      messagebox.showerror("Error", "Username already exists!")
 
   def login_user(self):
     username = self.user_entry.get().strip()
@@ -198,16 +230,17 @@ class SecureTodoApp:
     self.clear_window()
     self.root.geometry("880x650")
 
+    # Header section (Dark Grey)
     header_frame = ctk.CTkFrame(
-        self.root, fg_color="#E8E4D9", corner_radius=0, height=50
+        self.root, fg_color="#1A1A1A", corner_radius=0, height=50
     )
     header_frame.pack(fill=ctk.X, padx=0, pady=0)
 
     welcome_lbl = ctk.CTkLabel(
         header_frame,
-        text=f"Welcome, {self.current_username} 📌",
+        text=f"Welcome, {self.current_username} 🖤",
         font=("Arial", 14, "bold"),
-        text_color="#2C2C2C",
+        text_color="#E0E0E0",
     )
     welcome_lbl.pack(side=ctk.LEFT, padx=15, pady=10)
 
@@ -215,14 +248,15 @@ class SecureTodoApp:
         header_frame,
         text="Logout",
         command=self.show_login_screen,
-        fg_color="#D9C3B0",
-        text_color="#2C2C2C",
+        fg_color="#2A2A2A",
+        hover_color="#3A3A3A",
+        text_color="#E0E0E0",
         width=70,
         height=25,
     )
     logout_btn.pack(side=ctk.RIGHT, padx=15)
 
-    grid_frame = ctk.CTkFrame(self.root, fg_color="#F4F1EA")
+    grid_frame = ctk.CTkFrame(self.root, fg_color="#121212")
     grid_frame.pack(fill=ctk.BOTH, expand=True, padx=15, pady=15)
 
     self.default_pages = ["Daily Tasks", "Work Notes", "Personal / Ideas"]
@@ -230,7 +264,11 @@ class SecureTodoApp:
 
     for i, page in enumerate(self.default_pages):
       card = ctk.CTkFrame(
-          grid_frame, fg_color="#FFFDF9", corner_radius=10, border_width=1
+          grid_frame,
+          fg_color="#1E1E1E",
+          corner_radius=10,
+          border_width=1,
+          border_color="#2A2A2A",
       )
       card.grid(row=0, column=i, sticky="nsew", padx=8, pady=5)
       grid_frame.grid_columnconfigure(i, weight=1)
@@ -240,12 +278,12 @@ class SecureTodoApp:
           card,
           text=page,
           font=("Arial", 13, "bold"),
-          text_color="#3D3A36",
+          text_color="#E0E0E0",
       )
       title_lbl.pack(anchor="w", padx=12, pady=(10, 5))
 
       task_scroll = ctk.CTkScrollableFrame(
-          card, fg_color="#F9F6F0", corner_radius=6, height=350
+          card, fg_color="#161616", corner_radius=6, height=350
       )
       task_scroll.pack(fill=ctk.BOTH, expand=True, padx=10, pady=5)
 
@@ -256,9 +294,10 @@ class SecureTodoApp:
           input_row,
           placeholder_text="Add item...",
           height=30,
-          fg_color="#FFFDF9",
-          text_color="#2C2C2C",
+          fg_color="#1E1E1E",
+          text_color="#E0E0E0",
           border_width=1,
+          border_color="#333333",
       )
       task_entry.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 5))
       task_entry.bind(
@@ -270,8 +309,9 @@ class SecureTodoApp:
           text="+",
           width=30,
           height=30,
-          fg_color="#3D3A36",
-          hover_color="#57534E",
+          fg_color="#2A2A2A",
+          hover_color="#3A3A3A",
+          text_color="#E0E0E0",
           command=lambda p=page: self.add_task_from_entry(p),
       )
       add_btn.pack(side=ctk.RIGHT)
@@ -279,7 +319,7 @@ class SecureTodoApp:
       self.card_data[page] = {
           "scroll_frame": task_scroll,
           "entry": task_entry,
-          "tasks": [],  # stores dicts: {'text': ..., 'checked': bool}
+          "tasks": [],
       }
 
     self.load_all_todos()
@@ -291,10 +331,11 @@ class SecureTodoApp:
 
     save_btn = ctk.CTkButton(
         bottom_frame,
-        text="Save All Cards & Collapse to Widget 📌",
+        text="Save All Cards & Collapse to Widget 🖤",
         command=self.save_and_collapse,
-        fg_color="#3D3A36",
-        hover_color="#57534E",
+        fg_color="#2A2A2A",
+        hover_color="#3A3A3A",
+        text_color="#E0E0E0",
         height=40,
     )
     save_btn.pack(fill=ctk.X, expand=True)
@@ -315,11 +356,9 @@ class SecureTodoApp:
   def refresh_task_ui(self, page_name):
     scroll_frame = self.card_data[page_name]["scroll_frame"]
 
-    # Clear current widgets in scroll frame
     for widget in scroll_frame.winfo_children():
       widget.destroy()
 
-    # Sort tasks: unchecked first, checked at the bottom
     tasks = self.card_data[page_name]["tasks"]
     tasks.sort(key=lambda x: x["checked"])
 
@@ -329,16 +368,16 @@ class SecureTodoApp:
 
       var = ctk.BooleanVar(value=item["checked"])
 
-      # Strikethrough style or muted color when checked
-      text_color = "#8C8882" if item["checked"] else "#2C2C2C"
+      # Dimmed grey text for checked items
+      text_color = "#666666" if item["checked"] else "#E0E0E0"
 
       chk = ctk.CTkCheckBox(
           row,
           text=item["text"],
           variable=var,
           text_color=text_color,
-          fg_color="#3D3A36",
-          hover_color="#57534E",
+          fg_color="#333333",
+          hover_color="#444444",
           corner_radius=4,
           command=lambda it=item, p=page_name, v=var: self.on_check_toggle(
               it, p, v
@@ -352,8 +391,8 @@ class SecureTodoApp:
           width=24,
           height=24,
           fg_color="transparent",
-          text_color="#8C8882",
-          hover_color="#E8E4D9",
+          text_color="#666666",
+          hover_color="#2A2A2A",
           font=("Arial", 11, "bold"),
           command=lambda it=item, p=page_name: self.delete_task(it, p),
       )
@@ -361,7 +400,6 @@ class SecureTodoApp:
 
   def on_check_toggle(self, item, page_name, var):
     item["checked"] = var.get()
-    # Refresh to automatically move checked items to bottom
     self.refresh_task_ui(page_name)
 
   def delete_task(self, item, page_name):
@@ -413,8 +451,8 @@ class SecureTodoApp:
     self.mini_window = ctk.CTkToplevel(self.root)
     self.mini_window.overrideredirect(True)
     self.mini_window.geometry("180x45+100+100")
-    self.mini_window.attributes("-topmost", True)
-    self.mini_window.configure(fg_color="#E8E4D9")
+    # REMOVEDattributes("-topmost", True) -> Ab ye doosri apps ke upar hover nahi karega, normal desktop window ki tarah rahega!
+    self.mini_window.configure(fg_color="#1E1E1E")
 
     def start_move(event):
       self.mini_window.x = event.x
@@ -429,11 +467,11 @@ class SecureTodoApp:
 
     btn = ctk.CTkButton(
         self.mini_window,
-        text="📌 Open To-Do Notes",
+        text="🖤 Open To-Do Notes",
         command=self.restore_main_window,
-        fg_color="#3D3A36",
-        hover_color="#57534E",
-        text_color="#FFFFFF",
+        fg_color="#2A2A2A",
+        hover_color="#3A3A3A",
+        text_color="#E0E0E0",
         font=("Arial", 11, "bold"),
         corner_radius=6,
     )
