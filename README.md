@@ -1,7 +1,7 @@
-Secure Desktop To-Do Application 🖤
+# Secure Desktop To-Do Application 🖤
 A private, secure, multi-user, and aesthetic desktop to-do application built with Python and CustomTkinter. Designed with a minimalist dark theme (Black/Grey) inspired by Google Keep, it features a floating desktop widget for seamless daily productivity.
 
-✨ Features
+## ✨ Features
 
 - Minimalist Dark Theme: Sleek black and grey aesthetic designed to reduce eye strain and look professional on any desktop.
 - Multi-User Authentication: Secure user registration and login system powered by bcrypt password hashing to keep individual notes private and isolated.
@@ -9,7 +9,7 @@ A private, secure, multi-user, and aesthetic desktop to-do application built wit
 - Smart Floating Desktop Widget: Collapse the main app into a compact status bar that sits right on your desktop. It features smart positional memory—remembering its exact screen coordinates when collapsing and expanding.
 - Local SQLite Storage: Fast, reliable, and localized data storage per user.
 
-🛠 Tech Stack
+## 🛠 Tech Stack
 
 - Python (Core application logic)
 - CustomTkinter (Modern UI framework)
@@ -17,9 +17,9 @@ A private, secure, multi-user, and aesthetic desktop to-do application built wit
 - Bcrypt (Secure password hashing)
 - PyInstaller (Packaging the application into a standalone Windows .exe)
 
-🚀 Getting Started
+## 🚀 Getting Started
 
-Prerequisites
+### Prerequisites
 Ensure you have Python installed on your system (Python 3.8 or higher recommended).
 
 Installation & Running Locally
@@ -39,7 +39,7 @@ python app.py
 📦 Building a Standalone Executable (.exe)
 To package the application into a standalone Windows executable file so you can run it directly from your desktop:
 
-Install PyInstaller:
+### Install PyInstaller:
 
 Bash
 pip install pyinstaller
@@ -49,5 +49,5 @@ Bash
 pyinstaller --noconsole --onefile app.py
 Locate your compiled application inside the newly created dist/ folder (app.exe), right-click to send it to your desktop as a shortcut, and you're good to go!
 
-📄 License
+## 📄 License
 This project is open-source and available for use and modification.
