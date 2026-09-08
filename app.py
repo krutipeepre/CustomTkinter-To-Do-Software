@@ -487,19 +487,33 @@ class SecureTodoApp:
     self.mini_window.geometry("180x45+100+100")
     self.mini_window.configure(fg_color="#1E1E1E")
 
-    # FIXED DRAG LOGIC USING GLOBAL ROOT COORDINATES
+    # Track drag distance to differentiate between dragging and clicking
+    self.drag_start_x = 0
+    self.drag_start_y = 0
+    self.is_dragging = False
+
     def start_move(event):
-      self.mini_window.x_offset = (
-          event.x_root - self.mini_window.winfo_x()
-      )
-      self.mini_window.y_offset = (
-          event.y_root - self.mini_window.winfo_y()
-      )
+      self.drag_start_x = event.x_root
+      self.drag_start_y = event.y_root
+      self.is_dragging = False
+      self.mini_window.x_offset = event.x_root - self.mini_window.winfo_x()
+      self.mini_window.y_offset = event.y_root - self.mini_window.winfo_y()
 
     def do_move(event):
+      # If mouse moves more than 3 pixels, treat it as a drag action
+      if (
+          abs(event.x_root - self.drag_start_x) > 3
+          or abs(event.y_root - self.drag_start_y) > 3
+      ):
+        self.is_dragging = True
       x = event.x_root - self.mini_window.x_offset
       y = event.y_root - self.mini_window.y_offset
       self.mini_window.geometry(f"+{x}+{y}")
+
+    def on_click(event):
+      # Open app only if it was a clean click (not a drag)
+      if not self.is_dragging:
+        self.restore_main_window()
 
     btn = ctk.CTkButton(
         self.mini_window,
@@ -513,8 +527,10 @@ class SecureTodoApp:
     )
     btn.pack(fill=ctk.BOTH, expand=True, padx=4, pady=4)
 
+    # Bind smooth drag and click separation
     btn.bind("<Button-1>", start_move)
     btn.bind("<B1-Motion>", do_move)
+    btn.bind("<ButtonRelease-1>", on_click)
 
   def restore_main_window(self, event=None):
     if self.mini_window:
